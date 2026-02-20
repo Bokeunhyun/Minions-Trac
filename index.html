@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRAC Minion Clicker 🍌</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+  :root {
+    --yellow: #FFD700;
+    --yellow2: #FFC200;
+    --blue: #1A3C8F;
+    --blue2: #2952C4;
+    --trac: #00E5FF;
+    --trac2: #00B8D9;
+    --dark: #0a0a1a;
+    --silver: #C0C0C0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+    background-image: 
+      radial-gradient(ellipse at 20% 20%, rgba(0,229,255,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,215,0,0.08) 0%, transparent 50%);
+  }
+
+  /* Floating bananas bg */
+  .banana-bg {
+    position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0;
+  }
+  .banana-bg span {
+    position: absolute;
+    font-size: 2rem;
+    opacity: 0.07;
+    animation: floatBanana linear infinite;
+  }
+
+  @keyframes floatBanana {
+    from { transform: translateY(110vh) rotate(0deg); }
+    to { transform: translateY(-10vh) rotate(360deg); }
+  }
+
+  /* Header */
+  header {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 28px 20px 10px;
+  }
+
+  .trac-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, var(--trac2), var(--trac));
+    color: #000;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    padding: 5px 16px;
+    border-radius: 20px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    box-shadow: 0 0 20px rgba(0,229,255,0.5);
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    color: var(--yellow);
+    text-shadow: 
+      0 0 30px rgba(255,215,0,0.6),
+      4px 4px 0 var(--blue);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  h1 span { color: var(--trac); text-shadow: 0 0 30px rgba(0,229,255,0.8), 4px 4px 0 #006080; }
+
+  .subtitle {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.95rem;
+    margin-top: 8px;
+  }
+
+  /* Stats bar */
+  .stats {
+    position: relative; z-index: 10;
+    display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;
+    padding: 16px 20px;
+  }
+
+  .stat-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 12px 24px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    min-width: 130px;
+    transition: transform 0.2s;
+  }
+
+  .stat-card:hover { transform: translateY(-3px); }
+
+  .stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: var(--yellow);
+  }
+
+  .stat-value.trac-val { color: var(--trac); }
+  .stat-value.combo-val { color: #ff6b9d; }
+
+  /* Main game area */
+  .game-area {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px;
+  }
+
+  /* Minion SVG container */
+  .minion-wrapper {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    width: 220px; height: 280px;
+    transition: transform 0.1s;
+    filter: drop-shadow(0 0 30px rgba(255,215,0,0.4));
+  }
+
+  .minion-wrapper:hover { filter: drop-shadow(0 0 40px rgba(255,215,0,0.7)); }
+  .minion-wrapper:active { transform: scale(0.93) rotate(-3deg); }
+
+  .minion-wrapper.clicked {
+    animation: minionClick 0.15s ease-out;
+  }
+
+  @keyframes minionClick {
+    0% { transform: scale(1); }
+    40% { transform: scale(0.88) rotate(-5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  /* TRAC Hat glow */
+  .hat-glow { animation: hatPulse 2s ease-in-out infinite; }
+  @keyframes hatPulse {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(0,229,255,0.8)); }
+    50% { filter: drop-shadow(0 0 20px rgba(0,229,255,1)); }
+  }
+
+  /* Eyes blink */
+  .eye-inner { animation: blink 4s ease-in-out infinite; transform-origin: center; }
+  @keyframes blink {
+    0%, 90%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.05); }
+  }
+
+  /* Pupil follow */
+  .pupil { transition: transform 0.1s ease; }
+
+  /* Click particles */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    font-weight: 900;
+    z-index: 1000;
+    animation: particleFly 0.8s ease-out forwards;
+  }
+
+  @keyframes particleFly {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0.5); opacity: 0; }
+  }
+
+  /* Click hint */
+  .click-hint {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.85rem;
+    margin-top: 8px;
+    animation: hintPulse 2s ease-in-out infinite;
+  }
+  @keyframes hintPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+
+  /* Upgrades & bottom section */
+  .bottom-section {
+    position: relative; z-index: 10;
+    width: 100%; max-width: 700px;
+    margin: 20px auto;
+    padding: 0 20px;
+  }
+
+  .section-title {
+    font-family: 'Fredoka One', cursive;
+    color: var(--trac);
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    text-align: center;
+    text-shadow: 0 0 15px rgba(0,229,255,0.5);
+  }
+
+  .upgrades {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+
+  .upgrade-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upgrade-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,255,0.1), transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+
+  .upgrade-card:hover::before { opacity: 1; }
+  .upgrade-card:hover { border-color: var(--trac); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,229,255,0.2); }
+
+  .upgrade-card.cant-afford { opacity: 0.4; cursor: not-allowed; }
+  .upgrade-card.cant-afford:hover { transform: none; border-color: rgba(255,255,255,0.1); }
+  .upgrade-card.cant-afford::before { opacity: 0; }
+
+  .upgrade-card.owned {
+    border-color: var(--yellow);
+    background: rgba(255,215,0,0.06);
+  }
+
+  .upgrade-icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .upgrade-name { font-family: 'Fredoka One', cursive; color: #fff; font-size: 1rem; }
+  .upgrade-desc { color: rgba(255,255,255,0.5); font-size: 0.75rem; margin-top: 2px; }
+  .upgrade-cost {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 8px;
+    background: rgba(255,215,0,0.15);
+    color: var(--yellow);
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* Milestones */
+  .milestones {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+
+  .milestone {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.4);
+    transition: all 0.3s;
+    text-align: center;
+  }
+
+  .milestone.achieved {
+    background: rgba(255,215,0,0.1);
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+
+  .milestone-icon { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+
+  /* Leaderboard / address */
+  .address-box {
+    background: rgba(0,229,255,0.06);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 16px;
+    padding: 18px 20px;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .address-label { color: var(--trac); font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+
+  .address-input {
+    width: 100%; background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 10px;
+    color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem; padding: 10px 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+
+  .address-input:focus { border-color: var(--trac); }
+  .address-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  .address-note { color: rgba(255,255,255,0.35); font-size: 0.72rem; margin-top: 8px; }
+
+  /* Auto-clicker visual */
+  .auto-clicks {
+    position: fixed; bottom: 20px; right: 20px;
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 0.8rem;
+    color: var(--trac);
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Toast notifications */
+  .toast {
+    position: fixed; top: 20px; right: 20px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid var(--trac);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: #fff;
+    font-size: 0.9rem;
+    z-index: 2000;
+    transform: translateX(120%);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 280px;
+    box-shadow: 0 8px 30px rgba(0,229,255,0.3);
+  }
+
+  .toast.show { transform: translateX(0); }
+  .toast strong { color: var(--trac); font-family: 'Fredoka One', cursive; }
+
+  /* Combo flash */
+  .combo-flash {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    border: 3px solid var(--yellow);
+    border-radius: 0;
+    opacity: 0;
+    animation: none;
+  }
+
+  .combo-flash.flash {
+    animation: borderFlash 0.3s ease-out;
+  }
+
+  @keyframes borderFlash {
+    0% { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+
+  /* Footer */
+  footer {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 20px;
+    color: rgba(255,255,255,0.2);
+    font-size: 0.75rem;
+  }
+
+  footer a { color: var(--trac); text-decoration: none; }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .minion-wrapper { width: 180px; height: 230px; }
+    h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating banana background -->
+<div class="banana-bg" id="bananaBg"></div>
+<div class="combo-flash" id="comboFlash"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Header -->
+<header>
+  <div class="trac-badge">⚡ TRAC NETWORK APP</div>
+  <h1>MINION <span>TRAC</span> CLICKER</h1>
+  <p class="subtitle">Click the Minion. Earn TNK. Rule the blockchain! 🍌</p>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">TNK Earned</div>
+    <div class="stat-value" id="tnkDisplay">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Per Click</div>
+    <div class="stat-value trac-val" id="perClickDisplay">1</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Combo x</div>
+    <div class="stat-value combo-val" id="comboDisplay">1</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Clicks</div>
+    <div class="stat-value" id="clicksDisplay">0</div>
+  </div>
+</div>
+
+<!-- Game Area -->
+<div class="game-area">
+  <!-- SVG Minion -->
+  <div class="minion-wrapper" id="minion" title="Click me for TNK!">
+    <svg viewBox="0 0 220 280" xmlns="http://www.w3.org/2000/svg" width="220" height="280">
+      <!-- Shadow -->
+      <ellipse cx="110" cy="270" rx="60" ry="10" fill="rgba(0,0,0,0.3)"/>
+
+      <!-- Body -->
+      <ellipse cx="110" cy="190" rx="75" ry="85" fill="#FFD700"/>
+      <!-- Body shading -->
+      <ellipse cx="90" cy="195" rx="60" ry="70" fill="#FFC200" opacity="0.3"/>
+
+      <!-- Overalls -->
+      <path d="M45 220 Q40 270 110 278 Q180 270 175 220 Q165 240 110 245 Q55 240 45 220Z" fill="#3D5AF1"/>
+      <rect x="75" y="210" width="20" height="50" rx="5" fill="#3D5AF1"/>
+      <rect x="125" y="210" width="20" height="50" rx="5" fill="#3D5AF1"/>
+      <!-- Overall buckles -->
+      <rect x="85" y="175" width="14" height="10" rx="2" fill="#3D5AF1"/>
+      <rect x="121" y="175" width="14" height="10" rx="2" fill="#3D5AF1"/>
+      <!-- Overall straps -->
+      <path d="M89 175 Q95 150 105 145" stroke="#3D5AF1" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M131 175 Q125 150 115 145" stroke="#3D5AF1" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <!-- Overall pocket -->
+      <rect x="90" y="215" width="40" height="25" rx="5" fill="rgba(255,255,255,0.1)" stroke="#5572F5" stroke-width="1"/>
+      <!-- Pocket logo -->
+      <text x="110" y="233" text-anchor="middle" font-size="11" fill="#00E5FF" font-family="Arial" font-weight="bold">TRAC</text>
+
+      <!-- Head -->
+      <ellipse cx="110" cy="120" rx="70" ry="75" fill="#FFD700"/>
+      <ellipse cx="90" cy="110" rx="55" ry="60" fill="#FFC200" opacity="0.25"/>
+
+      <!-- TRAC Hat -->
+      <g class="hat-glow">
+        <!-- Hat brim -->
+        <ellipse cx="110" cy="55" rx="72" ry="12" fill="#00B8D9"/>
+        <!-- Hat body -->
+        <rect x="60" y="5" width="100" height="52" rx="10" fill="#006080"/>
+        <!-- Hat gradient overlay -->
+        <rect x="60" y="5" width="100" height="52" rx="10" fill="url(#hatGrad)"/>
+        <!-- Hat band -->
+        <rect x="60" y="44" width="100" height="12" rx="0" fill="#00E5FF" opacity="0.4"/>
+        <!-- TRAC Logo on hat -->
+        <text x="110" y="36" text-anchor="middle" font-size="22" fill="#00E5FF" font-family="Arial" font-weight="900" letter-spacing="2">TRAC</text>
+        <!-- Small decorative lines -->
+        <line x1="70" y1="20" x2="70" y2="42" stroke="rgba(0,229,255,0.3)" stroke-width="1"/>
+        <line x1="150" y1="20" x2="150" y2="42" stroke="rgba(0,229,255,0.3)" stroke-width="1"/>
+        <!-- Hat shine -->
+        <ellipse cx="88" cy="18" rx="15" ry="6" fill="rgba(255,255,255,0.15)" transform="rotate(-20,88,18)"/>
+      </g>
+
+      <!-- Goggles frame -->
+      <ellipse cx="110" cy="125" rx="52" ry="28" fill="#888" opacity="0.8"/>
+      <ellipse cx="110" cy="125" rx="48" ry="24" fill="#555"/>
+      <!-- Left eye -->
+      <ellipse cx="85" cy="125" rx="23" ry="23" fill="#B8D4FF"/>
+      <!-- Right -->
+      <ellipse cx="135" cy="125" rx="23" ry="23" fill="#B8D4FF"/>
+      <!-- Eye whites -->
+      <ellipse cx="85" cy="125" rx="20" ry="20" fill="white"/>
+      <ellipse cx="135" cy="125" rx="20" ry="20" fill="white"/>
+      <!-- Pupils (one eye for cyclops style - merge) -->
+      <!-- Actually one big eye (cyclops) -->
+      <ellipse cx="110" cy="122" rx="28" ry="28" fill="#fff" id="eyeBig"/>
+      <!-- Goggle frame over eye -->
+      <ellipse cx="110" cy="122" rx="35" ry="28" fill="none" stroke="#999" stroke-width="5"/>
+      <!-- Iris -->
+      <ellipse cx="110" cy="122" rx="18" ry="18" fill="#7B5EA7"/>
+      <!-- Iris detail -->
+      <ellipse cx="110" cy="122" rx="14" ry="14" fill="#4A3080"/>
+      <!-- Pupil -->
+      <ellipse cx="110" cy="122" rx="9" ry="9" fill="#000" id="pupil"/>
+      <!-- Eye reflection -->
+      <ellipse cx="103" cy="115" rx="4" ry="4" fill="white" opacity="0.8"/>
+      <ellipse cx="116" cy="118" rx="2" ry="2" fill="white" opacity="0.5"/>
+      <!-- Blink layer -->
+      <ellipse cx="110" cy="122" rx="28" ry="0" fill="#FFD700" id="blinkLayer"/>
+
+      <!-- Nose -->
+      <ellipse cx="110" cy="153" rx="8" ry="6" fill="#E8B800"/>
+
+      <!-- Smile -->
+      <path d="M82 165 Q110 185 138 165" stroke="#8B6914" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Teeth -->
+      <path d="M92 167 Q110 183 128 167 Q120 175 110 177 Q100 175 92 167Z" fill="white"/>
+      <line x1="110" y1="167" x2="110" y2="177" stroke="#ddd" stroke-width="1"/>
+
+      <!-- Ears -->
+      <ellipse cx="40" cy="130" rx="12" ry="15" fill="#FFD700"/>
+      <ellipse cx="40" cy="130" rx="7" ry="10" fill="#E8A500"/>
+      <ellipse cx="180" cy="130" rx="12" ry="15" fill="#FFD700"/>
+      <ellipse cx="180" cy="130" rx="7" ry="10" fill="#E8A500"/>
+
+      <!-- Arms -->
+      <ellipse cx="32" cy="195" rx="15" ry="40" fill="#FFD700" transform="rotate(-10,32,195)"/>
+      <ellipse cx="190" cy="190" rx="15" ry="40" fill="#FFD700" transform="rotate(10,190,190)"/>
+      <!-- Hands -->
+      <ellipse cx="25" cy="230" rx="16" ry="14" fill="#FFD700"/>
+      <ellipse cx="195" cy="225" rx="16" ry="14" fill="#FFD700"/>
+      <!-- Gloves -->
+      <ellipse cx="25" cy="230" rx="15" ry="13" fill="white" opacity="0.9"/>
+      <ellipse cx="195" cy="225" rx="15" ry="13" fill="white" opacity="0.9"/>
+      <!-- Glove lines -->
+      <line x1="18" y1="220" x2="20" y2="235" stroke="#ddd" stroke-width="1.5"/>
+      <line x1="25" y1="218" x2="25" y2="235" stroke="#ddd" stroke-width="1.5"/>
+      <line x1="32" y1="220" x2="30" y2="235" stroke="#ddd" stroke-width="1.5"/>
+      <line x1="188" y1="214" x2="189" y2="230" stroke="#ddd" stroke-width="1.5"/>
+      <line x1="195" y1="212" x2="195" y2="230" stroke="#ddd" stroke-width="1.5"/>
+      <line x1="202" y1="214" x2="201" y2="230" stroke="#ddd" stroke-width="1.5"/>
+
+      <!-- Shoes -->
+      <ellipse cx="85" cy="273" rx="26" ry="10" fill="#222"/>
+      <ellipse cx="135" cy="273" rx="26" ry="10" fill="#222"/>
+      <!-- Shoe highlight -->
+      <ellipse cx="80" cy="269" rx="10" ry="4" fill="#444"/>
+      <ellipse cx="130" cy="269" rx="10" ry="4" fill="#444"/>
+
+      <!-- Hair wisps -->
+      <path d="M95 50 Q90 30 100 20" stroke="#8B6914" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M110 48 Q108 25 115 15" stroke="#8B6914" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M125 50 Q130 30 120 18" stroke="#8B6914" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+      <defs>
+        <linearGradient id="hatGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(0,229,255,0.15)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0.3)"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="click-hint">👆 TAP THE MINION TO EARN TNK!</div>
+</div>
+
+<!-- Auto-click indicator -->
+<div class="auto-clicks" id="autoClicks" style="display:none">
+  🤖 Auto: <span id="autoRate">0</span> TNK/s
+</div>
+
+<!-- Bottom section -->
+<div class="bottom-section">
+
+  <!-- Trac Address -->
+  <div class="address-box">
+    <div class="address-label">🔑 Your TRAC Address (for payout)</div>
+    <input type="text" class="address-input" id="tracAddress" placeholder="Enter your Trac address here..." />
+    <div class="address-note">Add your address above to qualify for 500 TNK payout from the Awesome Intercom list</div>
+  </div>
+
+  <!-- Upgrades -->
+  <div class="section-title">⚡ UPGRADES</div>
+  <div class="upgrades" id="upgradesGrid"></div>
+
+  <!-- Milestones -->
+  <div class="section-title">🏆 MILESTONES</div>
+  <div class="milestones" id="milestonesGrid"></div>
+
+</div>
+
+<footer>
+  <p>Built on <a href="https://github.com/Trac-Systems/intercom" target="_blank">Trac Network Intercom</a> • Fork of Intercom P2P Stack</p>
+  <p style="margin-top:4px">🍌 Banana-powered. TNK-fueled. Minion-approved.</p>
+</footer>
+
+<script>
+// ---- Game State ----
+const state = {
+  tnk: 0,
+  clicks: 0,
+  perClick: 1,
+  combo: 1,
+  comboTimer: null,
+  comboCount: 0,
+  autoRate: 0,
+  upgrades: {}
+};
+
+// ---- Upgrade Definitions ----
+const UPGRADES = [
+  { id: 'banana', icon: '🍌', name: 'Banana Power', desc: '+2 TNK per click', cost: 50, effect: () => { state.perClick += 2; } },
+  { id: 'goggles', icon: '🥽', name: 'TRAC Goggles', desc: 'See the blockchain clearly (+5/click)', cost: 200, effect: () => { state.perClick += 5; } },
+  { id: 'minion_army', icon: '👥', name: 'Minion Army', desc: 'Auto-click: +2 TNK/sec', cost: 500, effect: () => { state.autoRate += 2; } },
+  { id: 'hat_upgrade', icon: '🎩', name: 'Diamond TRAC Hat', desc: 'Combo multiplier x2', cost: 1000, effect: () => { /* combo bonus applied in click */ } },
+  { id: 'rocket', icon: '🚀', name: 'TNK Rocket', desc: 'Auto-click: +10 TNK/sec', cost: 3000, effect: () => { state.autoRate += 10; } },
+  { id: 'mega', icon: '💎', name: 'Mega Minion', desc: '+50 TNK per click', cost: 5000, effect: () => { state.perClick += 50; } },
+];
+
+// ---- Milestone Definitions ----
+const MILESTONES = [
+  { id: 'm1', icon: '🍌', label: '10 Clicks', check: () => state.clicks >= 10 },
+  { id: 'm2', icon: '⚡', label: '100 TNK', check: () => state.tnk >= 100 },
+  { id: 'm3', icon: '🥳', label: '500 Clicks', check: () => state.clicks >= 500 },
+  { id: 'm4', icon: '💰', label: '1K TNK', check: () => state.tnk >= 1000 },
+  { id: 'm5', icon: '🚀', label: '10K TNK', check: () => state.tnk >= 10000 },
+  { id: 'm6', icon: '👑', label: '100K TNK', check: () => state.tnk >= 100000 },
+];
+
+// ---- Init floating bananas ----
+function initBananas() {
+  const bg = document.getElementById('bananaBg');
+  for (let i = 0; i < 15; i++) {
+    const span = document.createElement('span');
+    span.textContent = ['🍌','⚡','💎','🔵'][Math.floor(Math.random()*4)];
+    span.style.left = Math.random()*100 + '%';
+    span.style.animationDuration = (8 + Math.random()*15) + 's';
+    span.style.animationDelay = (-Math.random()*20) + 's';
+    span.style.fontSize = (1 + Math.random()*2) + 'rem';
+    bg.appendChild(span);
+  }
+}
+
+// ---- Build upgrades grid ----
+function buildUpgrades() {
+  const grid = document.getElementById('upgradesGrid');
+  grid.innerHTML = '';
+  UPGRADES.forEach(u => {
+    const el = document.createElement('div');
+    el.className = 'upgrade-card' + (state.upgrades[u.id] ? ' owned' : '') + (state.tnk < u.cost && !state.upgrades[u.id] ? ' cant-afford' : '');
+    el.innerHTML = `
+      <div class="upgrade-icon">${u.icon}</div>
+      <div class="upgrade-name">${u.name}</div>
+      <div class="upgrade-desc">${u.desc}</div>
+      <div class="upgrade-cost">${state.upgrades[u.id] ? '✅ Owned' : '🪙 ' + u.cost.toLocaleString() + ' TNK'}</div>
+    `;
+    if (!state.upgrades[u.id]) {
+      el.addEventListener('click', () => buyUpgrade(u));
+    }
+    grid.appendChild(el);
+  });
+}
+
+// ---- Build milestones ----
+function buildMilestones() {
+  const grid = document.getElementById('milestonesGrid');
+  grid.innerHTML = '';
+  MILESTONES.forEach(m => {
+    const achieved = m.check();
+    const el = document.createElement('div');
+    el.className = 'milestone' + (achieved ? ' achieved' : '');
+    el.innerHTML = `<span class="milestone-icon">${m.icon}</span>${m.label}`;
+    grid.appendChild(el);
+  });
+}
+
+// ---- Buy upgrade ----
+function buyUpgrade(u) {
+  if (state.tnk < u.cost || state.upgrades[u.id]) return;
+  state.tnk -= u.cost;
+  state.upgrades[u.id] = true;
+  u.effect();
+  if (u.id === 'minion_army' || u.id === 'rocket') {
+    document.getElementById('autoClicks').style.display = 'block';
+  }
+  showToast(`🎉 <strong>${u.name}</strong> purchased!`);
+  updateDisplay();
+  buildUpgrades();
+}
+
+// ---- Click handler ----
+const minion = document.getElementById('minion');
+minion.addEventListener('click', (e) => {
+  // Combo
+  state.comboCount++;
+  clearTimeout(state.comboTimer);
+  state.comboTimer = setTimeout(() => { state.comboCount = 0; state.combo = 1; }, 1000);
+  if (state.comboCount >= 5) {
+    state.combo = Math.min(10, 1 + Math.floor(state.comboCount / 5));
+    // hat_upgrade doubles max combo
+    if (state.upgrades['hat_upgrade']) state.combo = Math.min(20, state.combo * 2);
+  }
+
+  const earned = state.perClick * state.combo;
+  state.tnk += earned;
+  state.clicks++;
+
+  // Animation
+  minion.classList.remove('clicked');
+  void minion.offsetWidth;
+  minion.classList.add('clicked');
+
+  // Particle
+  spawnParticle(e.clientX, e.clientY, `+${earned} TNK`, state.combo > 1 ? '#FFD700' : '#00E5FF');
+
+  if (state.combo > 1) {
+    spawnParticle(e.clientX, e.clientY - 30, `x${state.combo} COMBO!`, '#ff6b9d');
+    triggerComboFlash();
+  }
+
+  updateDisplay();
+  buildUpgrades();
+  buildMilestones();
+});
+
+// ---- Particle ----
+function spawnParticle(x, y, text, color='#00E5FF') {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.textContent = text;
+  p.style.color = color;
+  p.style.left = x + 'px';
+  p.style.top = y + 'px';
+  const angle = (Math.random() * 120 - 60) * Math.PI/180;
+  const dist = 60 + Math.random()*60;
+  p.style.setProperty('--dx', Math.sin(angle)*dist + 'px');
+  p.style.setProperty('--dy', -dist + 'px');
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 800);
+}
+
+// ---- Combo flash ----
+function triggerComboFlash() {
+  const f = document.getElementById('comboFlash');
+  f.classList.remove('flash');
+  void f.offsetWidth;
+  f.classList.add('flash');
+}
+
+// ---- Pupil follow mouse ----
+document.addEventListener('mousemove', (e) => {
+  const rect = minion.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height * 0.43;
+  const dx = (e.clientX - cx) / rect.width * 6;
+  const dy = (e.clientY - cy) / rect.height * 6;
+  const pupil = document.getElementById('pupil');
+  if (pupil) pupil.setAttribute('transform', `translate(${dx},${dy})`);
+});
+
+// ---- Update display ----
+function updateDisplay() {
+  document.getElementById('tnkDisplay').textContent = formatNum(state.tnk);
+  document.getElementById('perClickDisplay').textContent = state.perClick;
+  document.getElementById('comboDisplay').textContent = `${state.combo}x`;
+  document.getElementById('clicksDisplay').textContent = formatNum(state.clicks);
+  document.getElementById('autoRate').textContent = state.autoRate;
+}
+
+function formatNum(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return Math.floor(n).toString();
+}
+
+// ---- Auto clicker ----
+setInterval(() => {
+  if (state.autoRate > 0) {
+    state.tnk += state.autoRate / 10;
+    updateDisplay();
+  }
+}, 100);
+
+// ---- Blink animation ----
+const blinkLayer = document.getElementById('blinkLayer');
+function doBlink() {
+  let start = null;
+  const dur = 150;
+  function step(ts) {
+    if (!start) start = ts;
+    const p = (ts - start) / dur;
+    if (p < 0.5) {
+      blinkLayer.setAttribute('ry', 28 * (p*2));
+    } else {
+      blinkLayer.setAttribute('ry', 28 * (1 - (p-0.5)*2));
+    }
+    if (p < 1) requestAnimationFrame(step);
+    else {
+      blinkLayer.setAttribute('ry', 0);
+      setTimeout(doBlink, 2000 + Math.random()*4000);
+    }
+  }
+  requestAnimationFrame(step);
+}
+setTimeout(doBlink, 2000);
+
+// ---- Toast ----
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ---- Save address ----
+document.getElementById('tracAddress').addEventListener('change', (e) => {
+  if (e.target.value) showToast(`✅ Address saved: <strong>${e.target.value.slice(0,12)}...</strong>`);
+});
+
+// ---- Init ----
+initBananas();
+buildUpgrades();
+buildMilestones();
+updateDisplay();
+</script>
+</body>
+</html>
