@@ -52,7 +52,7 @@ This fork uses the Intercom P2P sidechain concept:
 ## 💰 TRAC Address
 
 ```
-[trac14ye0c2yzg7jfv9ng2nsy80dme633t283jlqjgkxvng47tesqjpjshepqnm]
+trac14ye0c2yzg7jfv9ng2nsy80dme633t283jlqjgkxvng47tesqjpjshepqnm
 ```
 
 > Replace the above with your actual Trac address to qualify for the 500 TNK payout from the Awesome Intercom list.
